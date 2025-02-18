@@ -89,13 +89,13 @@ const loginController = async(req,res) => {
    const deleteUserOTP = await OTPModel.deleteMany({userId:user._id});
    console.log("User OTP",deleteUserOTP)
    await sendOTPVerificationEmail(user,salt,res);
-   res.cookie('accesstoken', token, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'None',
-      expires: new Date(Date.now() + 600000),
-      partitioned: 'None'
-   }).status(200).json({ success:true,message: "Please complete Two-Factor Authentication (TFA) by entering the OTP sent to your email.", data: userData});
+   // res.cookie('accesstoken', token, {
+   //    httpOnly: true,
+   //    secure: true,
+   //    sameSite: 'None',
+   //    expires: new Date(Date.now() + 600000),
+   //    partitioned: 'None'
+   // }).status(200).json({ success:true,message: "Please complete Two-Factor Authentication (TFA) by entering the OTP sent to your email.", data: userData});
 
 
 }
@@ -278,14 +278,14 @@ const createNewPassword = async(req,res) => {
          return res.status(400).json({ success:false,message: "Account doesn't Exist" })
       }
       await sendOTPVerificationEmail(user,salt,res);
-      return res.status(200).json({
-         success:true,
-         message: "Complete the TFA to change the password.",
-         data:{
-            id:user._id,
-            userName : user.userName,
-         }
-      })
+      // return res.status(200).json({
+      //    success:true,
+      //    message: "Complete the TFA to change the password.",
+      //    data:{
+      //       id:user._id,
+      //       userName : user.userName,
+      //    }
+      // })
    }
    catch(error){
       return res.status(500).json({ success:false,message: 'Internal Server error',error:error })
