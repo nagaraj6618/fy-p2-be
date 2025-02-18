@@ -2,6 +2,7 @@ const express = require("express");
 const app = express();
 const cors = require("cors");
 const mongoose = require("mongoose");
+const authRoute = require("./routes/authRoute")
 require("dotenv").config();
 
 const PORT = process.env.PORT || 8000
@@ -17,7 +18,7 @@ function dbConnection () {
 }
 dbConnection();
 
-
+app.use("/api/v1/auth",authRoute);
 app.get("/",(req,res) => {
    return res.status(200).json({
       message:"Server Running..."
