@@ -1,4 +1,3 @@
-const axios = require('axios');
 const bcrypt = require('bcrypt');
 const userModelSchema = require('../model/userModel');
 const OTPModel = require('../model/OTPModel');
@@ -14,19 +13,8 @@ const transporter = nodemailer.createTransport({
 })
 
 
+const salt = bcrypt.genSaltSync(10);
 
-async function isEmailValid (email){
-   try {
-      const key = process.env.EMAIL_VALIDATE_API_KEY;
-      const response = await axios.get(`https://emailvalidation.abstractapi.com/v1/?api_key=${key}&email=${email}`);
-      // console.log(response.data.deliverability)
-      // console.log(response.data.deliverability == "DELIVERABLE")
-      return response.data.deliverability == "DELIVERABLE"
-   }
-   catch (error) {
-      return false;
-   }
-} 
 const registerController = async(req,res) => {
    try{
       const {name,userName,password,email} = req.body;
@@ -43,7 +31,7 @@ const registerController = async(req,res) => {
          return res.status(400).json({success:false,message:"User Already exist"});
       }
 
-      const salt = bcrypt.genSaltSync(10);
+      // const salt = bcrypt.genSaltSync(10);
       const hashPassword = bcrypt.hashSync(password,salt);
 
       const userData = {
@@ -82,6 +70,7 @@ const loginController = async(req,res) => {
       userName: user.userName,
       name: user.name,
       role:user.role,
+      id:user._id,
    }
    const correctPassword = await bcrypt.compareSync(req.body.password, user.password);
    if (!correctPassword) {
@@ -94,18 +83,19 @@ const loginController = async(req,res) => {
       },
       process.env.JWT_SECRET_KEY,
       {
-         expiresIn: "1h"
+         expiresIn: "1d"
       }
    );
-
+   const deleteUserOTP = await OTPModel.deleteMany({userId:user._id});
+   console.log("User OTP",deleteUserOTP)
+   await sendOTPVerificationEmail(user,salt,res);
    res.cookie('accesstoken', token, {
       httpOnly: true,
       secure: true,
       sameSite: 'None',
       expires: new Date(Date.now() + 600000),
       partitioned: 'None'
-
-   }).status(200).json({ success:true,message: "Login Success", data: userData, token: token });
+   }).status(200).json({ success:true,message: "Please complete Two-Factor Authentication (TFA) by entering the OTP sent to your email.", data: userData});
 
 
 }
@@ -116,14 +106,16 @@ const OTPVerification = async(req,res) => {
    try{
       console.log(req.body);
       const id = req.params.id;
-      const {otp} = req.body;
+      const {otp,password,type} = req.body;
       console.log("otp:",otp)
-      const userOTPVerificationRecords = await OTPModel.find({userId:id});
-      if(userOTPVerificationRecords.length<=0){
+      const userOTPVerificationRecord = await OTPModel.findOne({ userId: id })
+    .sort({ createdAt: -1 }) // Sort by createdAt in descending order
+    .limit(1);
+      if(!userOTPVerificationRecord){
          return res.status(400).json({success:false,message:"OTP doesn't exist"});
       }
-      const {expiresAt} = userOTPVerificationRecords[0];
-      const hashOtp = userOTPVerificationRecords[0].otp;
+      const {expiresAt} = userOTPVerificationRecord;
+      const hashOtp = userOTPVerificationRecord.otp;
       if(expiresAt < Date.now()){
          await OTPModel.deleteMany({userId:id});
          return res.status(200).json({message:'Code expired',success:false});
@@ -133,9 +125,45 @@ const OTPVerification = async(req,res) => {
          if(!isOtpValid){
             return res.status(400).json({success:false,message:'OTP is not valid'});
          }
-         const updateUserData = await userModelSchema.updateOne({_id:id},{verified:true});
-         await OTPModel.deleteMany({userId:id});
-         return res.status(200).json({success:true,message:'OTP verification Successfull',data:updateUserData})
+         // if(type && type === "login"){
+            // console.log("Login OTP")
+            const userData = await userModelSchema.findById(id);
+            console.log(userData)
+            const token = jwt.sign(
+               {
+                  id: userData._id,
+                  role: userData.role,
+                  userName: userData.userName
+               },
+               process.env.JWT_SECRET_KEY,
+               {
+                  expiresIn: "1d"
+               }
+            );
+            if(type && type === "create new password"){
+               return res.status(200).json({
+                  success:true,
+                  message:"OTP verified successfully"
+               })
+            }
+            if(password){
+               const hashPassword = bcrypt.hashSync(password,salt);
+               await userModelSchema.updateOne({_id:id},{verified:true,password:hashPassword});
+            }
+            const updateUserData = await userModelSchema.updateOne({_id:id},{verified:true});
+            // await OTPModel.deleteMany({userId:id});
+            return res.cookie('accesstoken', token, {
+               httpOnly: true,
+               secure: true,
+               sameSite: 'None',
+               expires: new Date(Date.now() + 600000),
+               partitioned: 'None'
+            }).status(200).json({ success:true,message: "Two-Factor Authentication (TFA) Completed via OTP", token:token});
+         
+         // }
+         // const updateUserData = await userModelSchema.updateOne({_id:id},{verified:true});
+         // await OTPModel.deleteMany({userId:id});
+         // return res.status(200).json({success:true,message:'OTP verification Successfull',data:updateUserData})
       }
       
    }
@@ -158,12 +186,12 @@ async function sendOTPVerificationEmail({_id,email},salt,res){
          subject: "Your OTP Code for Verification",
          html: `
              <p>Dear User,</p>
-             <p>Thank you for registering with Covid Vaccine.</p>
-             <p>Your OTP code for verification is:</p>
-             <h2>${otp}</h2>
-             <p>Please enter this code to complete your verification process. The code is valid for 10 minutes.</p>
-             <p>If you did not request this code, please ignore this email.</p>
-             <p>Best regards,<br>Covid Vaccine</p>
+            <p>Thank you for registering with Grammar.AI.</p>
+            <p>Your OTP code for verification is:</p>
+            <h2>${otp}</h2>
+            <p>Please enter this code to complete your verification process. The code is valid for 10 minutes.</p>
+            <p>If you did not request this code, please ignore this email.</p>
+            <p>Best regards,<br>Grammar AI</p>
          `
      };
      const hashOtp = bcrypt.hashSync(otp,salt);
@@ -240,5 +268,29 @@ const getUserDetail = async(req,res) => {
    }
 }
 
+const createNewPassword = async(req,res) => {
+   try{
+      const userByName = await userModelSchema.findOne({ userName: req.body.emailorusername });
+      const userByEmail = await userModelSchema.findOne({ email: req.body.emailorusername });
+      let user = userByEmail || userByName;
+      if (!user) {
+         console.log("Accound doesn't exist");
+         return res.status(400).json({ success:false,message: "Account doesn't Exist" })
+      }
+      await sendOTPVerificationEmail(user,salt,res);
+      return res.status(200).json({
+         success:true,
+         message: "Complete the TFA to change the password.",
+         data:{
+            id:user._id,
+            userName : user.userName,
+         }
+      })
+   }
+   catch(error){
+      return res.status(500).json({ success:false,message: 'Internal Server error',error:error })
+   }
+}
 
-module.exports = {loginController,registerController,OTPVerification,resetPassword,getUserDetail,sendOTPVerificationEmail}
+
+module.exports = {createNewPassword,loginController,registerController,OTPVerification,resetPassword,getUserDetail,sendOTPVerificationEmail}
