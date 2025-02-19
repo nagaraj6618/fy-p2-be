@@ -1,10 +1,16 @@
 const express = require("express");
-const { getAllGrammarChatHistory, getGrammarChatHistoryById, createNewGrammarChatHistory, deleteGrammarChatHistoryById } = require("../controller/grammarChatHistoryController");
+const { getAllGrammarChatHistory, getGrammarChatHistoryById, createNewGrammarChatHistory, deleteGrammarChatHistoryById, deleteAllChatHistoryOfUser } = require("../controller/grammarChatHistoryController");
+const { verifyUser } = require("../controller/authVerify");
 const router = express.Router();
 
 
-router.route("/").get(getAllGrammarChatHistory).post(createNewGrammarChatHistory);
-router.route("/:id").get(getGrammarChatHistoryById)
-.delete(deleteGrammarChatHistoryById);
+router.route("/")
+.get(verifyUser,getAllGrammarChatHistory)
+.post(verifyUser,createNewGrammarChatHistory)
+.delete(verifyUser,deleteAllChatHistoryOfUser);
+
+router.route("/:id")
+.get(verifyUser,getGrammarChatHistoryById)
+.delete(verifyUser,deleteGrammarChatHistoryById);
 
 module.exports = router;

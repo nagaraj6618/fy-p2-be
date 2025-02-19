@@ -15,6 +15,9 @@ const chatDataSchema = new mongoose.Schema({
    },
    chatHistoryId :{
       type:String,
+   },
+   userId : {
+      type:String
    }
 
 },{timestamps:true});

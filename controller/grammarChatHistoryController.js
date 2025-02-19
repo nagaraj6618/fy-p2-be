@@ -1,9 +1,14 @@
 const grammarChatHistoryModel = require("../model/chatHistoryModel");
+const { verifyToken } = require("./authVerify");
 
 const getAllGrammarChatHistory = async(req,res) => {
 
    try{
-      const allChatHistoryData = await grammarChatHistoryModel.find();
+
+      const user = await verifyToken(req.headers.authorization);
+      const allChatHistoryData = await grammarChatHistoryModel.find({
+         userId:user.id
+      });
       if(allChatHistoryData.length<=0){
          return res.status(404).json({
             success:false,
@@ -30,8 +35,9 @@ const getGrammarChatHistoryById = async(req,res) => {
 
    try{
       const id = req.params.id || "";
-      const chatHistoryData = await grammarChatHistoryModel.findById(id);
-      if(!chatHistoryData){
+      const user = await verifyToken(req.headers.authorization);
+      const chatHistoryData = await grammarChatHistoryModel.find({_id:id,userId:user.id});
+      if(chatHistoryData.length<=0){
          return res.status(404).json({
             message:"Requesting Chat history not found.",
             success:false
@@ -40,7 +46,7 @@ const getGrammarChatHistoryById = async(req,res) => {
       return res.status(200).json({
          message:"Successfully Retrived the chat history",
          success:true,
-         data : chatHistoryData
+         data : chatHistoryData[0]
       });
    }
    catch(error){
@@ -55,10 +61,12 @@ const getGrammarChatHistoryById = async(req,res) => {
 const createNewGrammarChatHistory = async(req,res) => {
 
    try{
+      const user = await verifyToken(req.headers.authorization);
       const newChatHistory = new grammarChatHistoryModel({
          chatHistoryName:"",
          totalChatData:0,
-         chatDataIds:[]
+         chatDataIds:[],
+         userId:user.id
       })
       await newChatHistory.save();
       return res.status(201).json({
@@ -78,8 +86,12 @@ const createNewGrammarChatHistory = async(req,res) => {
 const deleteGrammarChatHistoryById = async(req,res) => {
 
    try{
+      const user = await verifyToken(req.headers.authorization);
       const id = req.params.id || "";
-      const deleteData = await grammarChatHistoryModel.findByIdAndDelete(id);
+      const deleteData = await grammarChatHistoryModel.deleteMany({
+         _id:id,
+         userId: user.id
+      });
       if(!deleteData){
          return res.status(404).json({
             success:false,
@@ -100,4 +112,34 @@ const deleteGrammarChatHistoryById = async(req,res) => {
    }
 }
 
-module.exports = {getAllGrammarChatHistory,getGrammarChatHistoryById,createNewGrammarChatHistory,deleteGrammarChatHistoryById};
+const deleteAllChatHistoryOfUser = async(req,res) => {
+   try{
+      const user = await verifyToken(req.headers.authorization);
+      const deleteData = await grammarChatHistoryModel.deleteMany({
+         userId: user.id
+      });
+      if(!deleteData){
+         return res.status(404).json({
+            success:false,
+            message:"No record found to delete",
+         })
+      }
+      return res.status(200).json({
+         success: true,
+         message: "Successfully deleted the all history",
+      });
+   }catch(error){
+      return res.status(500).json({
+         message:"Internal Server Error",
+         error : error,
+         success:false
+      });
+   }
+}
+
+module.exports = {
+   getAllGrammarChatHistory
+   ,getGrammarChatHistoryById
+   ,createNewGrammarChatHistory
+   ,deleteGrammarChatHistoryById
+   ,deleteAllChatHistoryOfUser};
