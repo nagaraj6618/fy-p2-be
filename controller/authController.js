@@ -292,5 +292,17 @@ const createNewPassword = async(req,res) => {
    }
 }
 
+const resendOtp = async(req,res) => {
+   try{
+      const {email} = req.body;
+      
+      const user = await userModelSchema.find({
+         email
+      })
+      await sendOTPVerificationEmail(user[0],salt,res);
+   }catch(error){
+      return res.status(500).json({ success:false,message: 'Internal Server error',error:error })
+   }
 
-module.exports = {createNewPassword,loginController,registerController,OTPVerification,resetPassword,getUserDetail,sendOTPVerificationEmail}
+}
+module.exports = {resendOtp,createNewPassword,loginController,registerController,OTPVerification,resetPassword,getUserDetail,sendOTPVerificationEmail}

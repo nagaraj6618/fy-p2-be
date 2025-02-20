@@ -48,5 +48,44 @@ async function optimizePrompt(prompt) {
        return prompt;
    }
 }
-optimizePrompt("Explain how quantum computing works in simple terms.")
+// optimizePrompt("Explain how quantum computing works in simple terms.")
+
+async function checkGrammar(text) {
+    try {
+        const prompt = `Analyze the following text for grammar mistakes, word errors, and provide corrections. 
+        Also, give a reason for each error and assign a score from 0 to 100 based on grammatical correctness:
+        
+        Text: "${text}"
+        
+        Response Format:
+        - Error: [Detected error]
+        - Suggestion: [Correction with reason]
+        - Corrected Sentence: [Full corrected version]
+        - Score: [A score out of 100]
+        `;
+
+        const response = await axios.post(`${GEMINI_API_URL}?key=${API_KEY}`, {
+            // prompt: prompt,
+            contents: [{ parts: [{ text: {prompt} }] }],
+            // temperature: 0.5,
+            // maxTokens: 500
+        },{
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.data && response.data.candidates) {
+            console.log("Grammar Check Result:");
+            console.log(response.data.candidates[0].output);
+        } else {
+            console.log("Error: No response from Gemini API");
+        }
+    } catch (error) {
+        console.error("Error checking grammar:", error);
+    }
+}
+
+const userInput = "She go to the market every day and buy fresh vegetables.";
+checkGrammar(userInput);
 // console.log(data);
