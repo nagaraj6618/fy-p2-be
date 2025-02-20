@@ -29,7 +29,7 @@ const verifyUser = (req, res, next) => {
          next()
       }
       else {
-         return res.status(401).json({ success: false, message: "Not Authenticated" })
+         return res.status(401).json({ success: false, message: "Please Login!" })
       }
    }
    catch (error) {

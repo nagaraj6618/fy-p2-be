@@ -69,12 +69,24 @@ const getAllGrammarChatDataByChatHistoryID = async(req,res) => {
 const createNewGrammarChatData = async(req,res) => {
    try{
       const user = await verifyToken(req.headers.authorization);
-      const {message,chatHistoryId} = req.body
+      let {message,chatHistoryId} = req.body
       const prod_model_be_url = process.env.prod_model_be_url || ""
       const model_be_url =  `${prod_model_be_url}/calculate_score` 
       const response =  await axios.post(model_be_url,{
          text : message
       });
+      if(chatHistoryId && chatHistoryId === "new"){
+         console.log(chatHistoryId)
+         const user = await verifyToken(req.headers.authorization);
+         const newChatHistory = new grammerChatHistoryModel({
+         chatHistoryName:message,
+         totalChatData:0,
+         chatDataIds:[],
+         userId:user.id
+      })
+      await newChatHistory.save();
+      chatHistoryId = newChatHistory._id;
+      }
       const newChat = new grammerChatDataModel({
          userId:user.id,
          request : message,
@@ -101,9 +113,10 @@ const createNewGrammarChatData = async(req,res) => {
       } else {
          console.log("Chat history not found.");
       }
+      const responseData = {...response.data,chatHistoryId}
       return res.status(200).json({
          message:"Successfully new chat created.",
-         data: response.data,
+         data: responseData,
       })
    }catch(error){
       return res.status(500).json({
