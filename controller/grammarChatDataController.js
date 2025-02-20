@@ -33,7 +33,9 @@ const getAllGrammarChatData = async(req,res) => {
 const getAllGrammarChatDataByChatHistoryID = async(req,res) => {
    try{
       const user = await verifyToken(req.headers.authorization);
-      const {chatHistoryId} = req.body || "";
+      const {id} = req.params || "";
+      const chatHistoryId = id;
+      console.log("Chat History Id",chatHistoryId)
       if(!chatHistoryId){
          return res.status(400).json({
             message: "Please send the chat history ID..",
@@ -79,7 +81,8 @@ const createNewGrammarChatData = async(req,res) => {
          response:{
             score : response.data.score,
             suggest : response.data.suggest
-         }
+         },
+         chatHistoryId
       })
       console.log(newChat)
       await newChat.save();

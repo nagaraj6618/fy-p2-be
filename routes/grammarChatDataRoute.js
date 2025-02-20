@@ -6,8 +6,8 @@ const router = express.Router();
 router.route("/")
 .get(verifyUser,getAllGrammarChatData)
 .post(verifyUser,createNewGrammarChatData)
-.get(verifyUser,getAllGrammarChatDataByChatHistoryID);
-router.route("/:id")
+
+router.route("/:id").get(verifyUser,getAllGrammarChatDataByChatHistoryID)
 .put(verifyUser,updateGrammarChatDataByChatID);
 
 module.exports = router;
