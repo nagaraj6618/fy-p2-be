@@ -30,7 +30,7 @@ async function checkGrammar(text) {
        });
 
        if (response.data && response.data.candidates) {
-           console.log("Grammar Check Result:");
+         //   console.log("Grammar Check Result:");
          //   console.log((response.data.candidates[0].content.parts[0].text));
            return extractJson(response.data.candidates[0].content.parts[0].text)
        } else {

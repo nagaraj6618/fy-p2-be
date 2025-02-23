@@ -79,7 +79,7 @@ const createNewGrammarChatData = async(req,res) => {
       });
       const geminiResponse = await checkGrammar(message);
       if(chatHistoryId && chatHistoryId === "new"){
-         console.log(chatHistoryId)
+         // console.log(chatHistoryId)
          const user = await verifyToken(req.headers.authorization);
          const newChatHistory = new grammerChatHistoryModel({
          chatHistoryName:message,
@@ -91,18 +91,20 @@ const createNewGrammarChatData = async(req,res) => {
       chatHistoryId = newChatHistory._id;
       }
 
-      if(response.data?.score === 100 && (!response.data?.suggest || response.data?.suggest === "This sentence is in active voice.")){
-         responseData = {...geminiResponse,chatHistoryId};
-      }
-      else{
-         responseData = {
-            score:geminiResponse.score,
-            suggest:response.data?.suggest,
-            suggestion:[response.data?.suggest,...geminiResponse.suggestion],
-            voiceMessage:geminiResponse.voiceMessage,
-            chatHistoryId
-         }
-      }
+      // if(response.data?.score === 100 && (!response.data?.suggest || response.data?.suggest === "This sentence is in active voice.")){
+      //    responseData = {...geminiResponse,chatHistoryId};
+      // }
+      // else{
+      //    responseData = {
+      //       score:geminiResponse.score,
+      //       suggest:response.data?.suggest,
+      //       suggestion:[response.data?.suggest,...geminiResponse.suggestion],
+      //       voiceMessage:geminiResponse.voiceMessage,
+      //       chatHistoryId
+      //    }
+      // }
+      // console.log("Hiiiiiiiiiiiiiiiiii",getResponseData(response,geminiResponse))
+       responseData = {...getModelResponseData(response,geminiResponse),chatHistoryId};
       const newChat = new grammerChatDataModel({
          userId:user.id,
          request : message,
@@ -134,7 +136,7 @@ const createNewGrammarChatData = async(req,res) => {
       // const responseData = {...response.data,chatHistoryId}
       return res.status(200).json({
          message:"Successfully new chat created.",
-         data: responseData,
+         data: newChat,
       })
    }catch(error){
       return res.status(500).json({
@@ -146,6 +148,7 @@ const createNewGrammarChatData = async(req,res) => {
 }
 const updateGrammarChatDataByChatID = async(req,res) => {
    try{
+      let responseData = null;
       const user = await verifyToken(req.headers.authorization);
       const {id} = req.params;
       const {message} = req.body;
@@ -154,6 +157,8 @@ const updateGrammarChatDataByChatID = async(req,res) => {
       const response =  await axios.post(model_be_url,{
          text : message
       });
+      const geminiResponse = await checkGrammar(message);
+      responseData = getModelResponseData(response,geminiResponse);
       let chatData = await grammerChatDataModel.find({
          _id:id,
          userId:user.id,
@@ -166,12 +171,12 @@ const updateGrammarChatDataByChatID = async(req,res) => {
       }
       chatData = chatData[0];
       chatData.request = message;
-      chatData.response = response.data;
+      chatData.response = responseData;
       await chatData.save()
       return res.status(200).json({
          success:true,
          message : "Successfully chat updated.",
-         data : response.data,
+         data : chatData,
       })
 
 
@@ -182,5 +187,28 @@ const updateGrammarChatDataByChatID = async(req,res) => {
          success:false,
       })
    }
+}
+
+function getModelResponseData(response,geminiResponse){
+   try{
+      let responseData = null;
+      console.log(response.data)
+   if(response.data?.score === 100 && (!response.data?.suggest || response.data?.suggest === "This sentence is in active voice.")){
+      responseData = {...geminiResponse,suggest:""};
+   }
+   else{
+      responseData = {
+         score:geminiResponse.score,
+         suggest:response.data?.suggest,
+         suggestion:[response.data?.suggest,...geminiResponse.suggestion],
+         voiceMessage:geminiResponse.voiceMessage,
+      }
+   }
+   return responseData
+   }
+   catch(error){
+      console.log("Error",error)
+   }
+   
 }
 module.exports = {getAllGrammarChatData,getAllGrammarChatDataByChatHistoryID,createNewGrammarChatData,updateGrammarChatDataByChatID};
