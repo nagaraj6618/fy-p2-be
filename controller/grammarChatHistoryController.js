@@ -1,4 +1,5 @@
 const grammarChatHistoryModel = require("../model/chatHistoryModel");
+const grammarChatDataModel = require("../model/ChatDataModel");
 const { verifyToken } = require("./authVerify");
 
 const getAllGrammarChatHistory = async(req,res) => {
@@ -92,7 +93,12 @@ const deleteGrammarChatHistoryById = async(req,res) => {
          _id:id,
          userId: user.id
       });
-      if(!deleteData){
+      const deleteChatData = await grammarChatDataModel.deleteMany({
+         chatHistoryId:id,
+         userId:user.id
+      })
+
+      if(!deleteData && !deleteChatData){
          return res.status(404).json({
             success:false,
             message:"No record found to delete",
