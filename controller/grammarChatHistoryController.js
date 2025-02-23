@@ -84,39 +84,41 @@ const createNewGrammarChatHistory = async(req,res) => {
       })
    }
 }
-const deleteGrammarChatHistoryById = async(req,res) => {
+const deleteGrammarChatHistoryById = async (req, res) => {
+   try {
+       const user = await verifyToken(req.headers.authorization);
+       const id = req.params.id || "";
 
-   try{
-      const user = await verifyToken(req.headers.authorization);
-      const id = req.params.id || "";
-      const deleteData = await grammarChatHistoryModel.deleteMany({
-         _id:id,
-         userId: user.id
-      });
-      const deleteChatData = await grammarChatDataModel.deleteMany({
-         chatHistoryId:id,
-         userId:user.id
-      })
+       // Delete chat history
+       const deleteData = await grammarChatHistoryModel.deleteMany({
+           _id: id,
+           userId: user.id
+       });
+       // Delete associated chat data
+       const deleteChatData = await grammarChatDataModel.deleteMany({
+           chatHistoryId: id,
+           userId: user.id
+       });
 
-      if(!deleteData && !deleteChatData){
-         return res.status(404).json({
-            success:false,
-            message:"No record found to delete",
-         })
-      }
-      return res.status(200).json({
-         success: true,
-         message: "Successfully deleted the chat history",
-      });
+       if (deleteData.deletedCount === 0 && deleteChatData.deletedCount === 0) {
+           return res.status(404).json({
+               success: false,
+               message: "No matching records found to delete."
+           });
+       }
+       return res.status(200).json({
+           success: true,
+           message: "Successfully deleted the chat history and related data.",
+       });
+   } catch (error) {
+       return res.status(500).json({
+           success: false,
+           message: "Internal Server Error",
+           error: error.message
+       });
    }
-   catch(error){
-      return res.status(500).json({
-         message:"Internal Server Error",
-         error : error,
-         success:false
-      })
-   }
-}
+};
+
 
 const deleteAllChatHistoryOfUser = async(req,res) => {
    try{

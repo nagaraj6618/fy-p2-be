@@ -17,6 +17,9 @@ const chatDataSchema = new mongoose.Schema({
       },
       voiceMessage:{
          type:String,
+      },
+      correctedSentence:{
+         type:String
       }
    },
    chatHistoryId :{

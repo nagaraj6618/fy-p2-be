@@ -112,7 +112,8 @@ const createNewGrammarChatData = async(req,res) => {
             score : responseData.score,
             suggest : responseData.suggest,
             suggestion : responseData.suggestion,
-            voiceMessage : responseData.voiceMessage
+            voiceMessage : responseData.voiceMessage,
+            correctedSentence : responseData.correctedSentence
          },
          chatHistoryId
       })
@@ -202,6 +203,7 @@ function getModelResponseData(response,geminiResponse){
          suggest:response.data?.suggest,
          suggestion:[response.data?.suggest,...geminiResponse.suggestion],
          voiceMessage:geminiResponse.voiceMessage,
+         correctedSentence:geminiResponse.correctedSentence
       }
    }
    return responseData
