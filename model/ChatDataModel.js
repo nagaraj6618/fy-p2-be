@@ -11,6 +11,12 @@ const chatDataSchema = new mongoose.Schema({
       },
       suggest:{
          type:String
+      },
+      suggestion:{
+         type:[]
+      },
+      voiceMessage:{
+         type:String,
       }
    },
    chatHistoryId :{

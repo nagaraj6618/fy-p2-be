@@ -2,6 +2,7 @@ const grammerChatDataModel = require("../model/ChatDataModel");
 const axios = require("axios");
 const { verifyToken } = require("./authVerify");
 const grammerChatHistoryModel = require("../model/chatHistoryModel");
+const { checkGrammar } = require("../ML-Model/model");
 
 const getAllGrammarChatData = async(req,res) => {
    try{
@@ -68,6 +69,7 @@ const getAllGrammarChatDataByChatHistoryID = async(req,res) => {
 
 const createNewGrammarChatData = async(req,res) => {
    try{
+      let responseData = null;
       const user = await verifyToken(req.headers.authorization);
       let {message,chatHistoryId} = req.body
       const prod_model_be_url = process.env.prod_model_be_url || ""
@@ -75,6 +77,7 @@ const createNewGrammarChatData = async(req,res) => {
       const response =  await axios.post(model_be_url,{
          text : message
       });
+      const geminiResponse = await checkGrammar(message);
       if(chatHistoryId && chatHistoryId === "new"){
          console.log(chatHistoryId)
          const user = await verifyToken(req.headers.authorization);
@@ -87,12 +90,27 @@ const createNewGrammarChatData = async(req,res) => {
       await newChatHistory.save();
       chatHistoryId = newChatHistory._id;
       }
+
+      if(response.data?.score === 100 && (!response.data?.suggest || response.data?.suggest === "This sentence is in active voice.")){
+         responseData = {...geminiResponse,chatHistoryId};
+      }
+      else{
+         responseData = {
+            score:geminiResponse.score,
+            suggest:response.data?.suggest,
+            suggestion:[response.data?.suggest,...geminiResponse.suggestion],
+            voiceMessage:geminiResponse.voiceMessage,
+            chatHistoryId
+         }
+      }
       const newChat = new grammerChatDataModel({
          userId:user.id,
          request : message,
          response:{
-            score : response.data.score,
-            suggest : response.data.suggest
+            score : responseData.score,
+            suggest : responseData.suggest,
+            suggestion : responseData.suggestion,
+            voiceMessage : responseData.voiceMessage
          },
          chatHistoryId
       })
@@ -113,7 +131,7 @@ const createNewGrammarChatData = async(req,res) => {
       } else {
          console.log("Chat history not found.");
       }
-      const responseData = {...response.data,chatHistoryId}
+      // const responseData = {...response.data,chatHistoryId}
       return res.status(200).json({
          message:"Successfully new chat created.",
          data: responseData,
