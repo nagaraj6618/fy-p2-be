@@ -197,6 +197,15 @@ function getModelResponseData(response,geminiResponse){
    if(response.data?.score === 100 && (!response.data?.suggest || response.data?.suggest === "This sentence is in active voice.")){
       responseData = {...geminiResponse,suggest:""};
    }
+   else if(response.data?.score !== 100 && geminiResponse.score === 100){
+      responseData = {
+         score:geminiResponse.score,
+         suggest:"",
+         suggestion:geminiResponse.suggestion,
+         voiceMessage:geminiResponse.voiceMessage,
+         correctedSentence:geminiResponse.correctedSentence
+      }
+   }
    else{
       responseData = {
          score:geminiResponse.score,
