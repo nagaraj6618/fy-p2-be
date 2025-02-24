@@ -5,6 +5,7 @@ const mongoose = require("mongoose");
 const authRoute = require("./routes/authRoute");
 const grammarChatHistoryRoute = require("./routes/grammarChatHistoryRoute");
 const grammarChatDataRoute = require("./routes/grammarChatDataRoute");
+const contactRoute = require("./routes/contactRoute");
 
 require("dotenv").config();
 
@@ -27,6 +28,7 @@ dbConnection();
 app.use("/api/v1/auth",authRoute);
 app.use("/api/v1/grammar-chat-history",grammarChatHistoryRoute);
 app.use("/api/v1/grammar-chat-data",grammarChatDataRoute);
+app.use("/api/v1/contact",contactRoute);
 
 app.get("/",(req,res) => {
    return res.status(200).json({
