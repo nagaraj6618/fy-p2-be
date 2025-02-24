@@ -88,7 +88,21 @@ const deleteOneInfo = async(req,res) => {
       res.status(200).json({success:true,message:"Contact deleted successfully", data: deletedContact});
    }
    catch(error){
-      res.status(500).json({message:'Message not deleted',success:false});
+      res.status(500).json({message:'Internal Server Error',success:false});
    }
 }
-module.exports = {getAllContactInfo , postContactInfo ,getOneContactInfo,deleteOneInfo};
+const deleteAllContactData = async(req,res) => {
+   try{
+      const deleteAllContactData = await ContactSchema.deleteMany();
+      if(deleteAllContactData){
+         return res.status(200).json({message:"Contact history cleared",success:true,data:deleteAllContactData})
+      }
+      res.status(400).json({
+         success:false,
+         message:"Contact history has not cleared.."
+      })
+   }catch(error){
+      res.status(500).json({message:'Internal Server Error',success:false});
+   }
+}
+module.exports = {getAllContactInfo , postContactInfo ,getOneContactInfo,deleteOneInfo,deleteAllContactData};
