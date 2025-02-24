@@ -85,10 +85,10 @@ const deleteOneInfo = async(req,res) => {
    try{
       
       const deletedContact = await ContactSchema.deleteOne({_id:id})
-      res.status(200).json({message:"Contact deleted successfully", data: deletedContact});
+      res.status(200).json({success:true,message:"Contact deleted successfully", data: deletedContact});
    }
    catch(error){
-      res.status(500).json({message:'unsuccess'});
+      res.status(500).json({message:'Message not deleted',success:false});
    }
 }
 module.exports = {getAllContactInfo , postContactInfo ,getOneContactInfo,deleteOneInfo};
