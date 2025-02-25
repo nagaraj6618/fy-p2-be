@@ -56,7 +56,44 @@ function extractJson(formattedJsonString) {
    }
 }
 
-// const userInput = "Their going too the park on there bicycle's, but its raining so they should of stayed home.";
-// const inputJson = checkGrammar(userInput);
+async function optimizePrompt(prompt) {
+    try {
+        if (!prompt || prompt.length < 5 || /[^a-zA-Z0-9?!.\s]/.test(prompt)) {
+            return `# Error\n\n## Issue with Prompt\n- The provided prompt is invalid, incomplete, or contains random/unrecognized text.\n- Please provide a clear and meaningful prompt.`;
+        }
+        
+        const response = await axios.post(
+            `${GEMINI_API_URL}?key=${GEMINI_API_KEY}`,
+            {
+                contents: [{ parts: [{ text: `Optimize this prompt for better AI response. Format the response in README-style:
 
-module.exports = {checkGrammar,extractJson};
+# Optimized Prompt
+
+## Simple Version
+- Provide a concise and clear version of the prompt.
+
+## Detailed Version
+- Offer an in-depth version of the prompt with additional context.
+
+## Specific Version
+- Make the prompt more targeted and specific for precise AI responses.
+
+Prompt: ${prompt}` }] }]
+            },
+            {
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            }
+        );
+        
+        const optimizedText = response.data.candidates[0].content.parts[0].text;
+        console.log(optimizedText);
+        return optimizedText;
+    } catch (error) {
+        console.error('Error optimizing prompt:', error);
+        return `# Optimized Prompt\n\n## Original Prompt\n${prompt}\n\n*Error occurred while optimizing the prompt.*`;
+    }
+}
+
+module.exports = {checkGrammar,extractJson,optimizePrompt};
