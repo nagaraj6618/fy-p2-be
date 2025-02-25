@@ -96,4 +96,83 @@ Prompt: ${prompt}` }] }]
     }
 }
 
-module.exports = {checkGrammar,extractJson,optimizePrompt};
+
+async function generateCode(prompt) {
+    try {
+        if (!prompt || prompt.length < 5 || /[^a-zA-Z0-9?!.,(){}<>\s]/.test(prompt)) {
+            return `# Error\n\n## Issue with Prompt\n- The provided prompt is invalid, incomplete, or contains unrecognized text.\n- Please provide a clear and meaningful programming-related prompt.`;
+        }
+        
+        const response = await axios.post(
+            `${GEMINI_API_URL}?key=${GEMINI_API_KEY}`,
+            {
+                contents: [{ parts: [{ text: `Generate a well-structured and optimized program based on the following prompt:
+
+# Code Generation Request
+
+## Prompt
+${prompt}
+
+## Expected Output
+- Ensure the code is efficient, follows best practices, and is easy to understand.` }] }]
+            },
+            {
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            }
+        );
+        
+        const generatedCode = response.data.candidates[0].content.parts[0].text;
+        console.log(generatedCode);
+        return generatedCode;
+    } catch (error) {
+        console.error('Error generating code:', error);
+        return `# Code Generation Failed\n\n## Original Prompt\n${prompt}\n\n*Error occurred while generating the program.*`;
+    }
+}
+
+async function explainAndOptimize(userCode) {
+    try {
+        if (!userCode || typeof userCode !== "string" || userCode.length < 5) {
+            return `# Error\n\n## Issue with Provided Code\n- The provided code is invalid, incomplete, or too short.\n- Please provide a valid program for analysis.`;
+        }
+        
+        const response = await axios.post(
+            `${GEMINI_API_URL}?key=${API_KEY}`,
+            {
+                contents: [{ parts: [{ text: `Analyze the following program. If it contains errors, correct them. Then, optimize the code for efficiency and best practices. Finally, explain each step in a README format.
+   -But Don't mention README word.
+# Code Analysis Request
+
+## Provided Code
+
+${ userCode }
+
+
+## Expected Output :
+- Correct code only if any syntax or logical errors(Note : ONLY CONTAINS ANY ERROR).
+- Optimize the code for better performance and readability.
+- Explain each steps of code, logic, approach, and improvement in detail.
+
+
+
+` }] }]
+            },
+            {
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            }
+        );
+        
+        const generatedCode = response.data.candidates[0].content.parts[0].text;
+        console.log(generatedCode);
+        return generatedCode;
+    } catch (error) {
+        console.error('Error generating code:', error);
+        return `# Code Generation Failed\n\n## Original Prompt\n${userCode}\n\n*Error occurred while generating the program.*`;
+    }
+}
+
+module.exports = {checkGrammar,extractJson,optimizePrompt,generateCode,explainAndOptimize};

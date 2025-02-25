@@ -1,31 +1,90 @@
-const { optimizePrompt } = require("../ML-Model/model");
+const { optimizePrompt, generateCode, explainAndOptimize } = require("../ML-Model/model");
 const AITooLModel = require("../model/aiToolModel");
 const { verifyToken } = require("./authVerify");
 
-const getALLChatOfUser = async(req,res) => {
-   try{
+// const getALLChatOfUser = async(req,res) => {
+//    try{
+//       console.log(req.query);
+//       const {type} = req.query;
+//       if(type){
+//          const AllAIChat = await AITooLModel.find({
+//             userId:user.id,
+//             response:{
+//                responseOf:type
+//             }
+//          });
+//          return res.status(200).json({
+//             message:`${type} data was retrived successfully`,
+//             success:true,
+//             data:AllAIChat
+//          })
+//       }
+//       const user = verifyToken(req.headers.authorization);
+//       const AllAIChat = await AITooLModel.find({
+//          userId:user.id
+//       });
+//       if(AllAIChat.length<=0){
+//          return res.status(404).json({
+//             message:"No Data found",
+//             success:false,
+//          })
+//       }
+//       res.status(200).json({
+//          message:"All the chat retrived..",
+//          success:true,
+//          data:AllAIChat
+//       })
+//    }catch(error){
+//       return res.status(500).json({
+//          message:"Internal Server Error",
+//          success:true
+//       });
+//    }
+// }
+
+const getALLChatOfUser = async (req, res) => {
+   try {
+      console.log(req.query);
+      const { type } = req.query;
+
+      // Ensure the user is authenticated before querying
       const user = verifyToken(req.headers.authorization);
-      const AllAIChat = await AITooLModel.find({
-         userId:user.id
-      });
-      if(AllAIChat.length<=0){
-         return res.status(404).json({
-            message:"No Data found",
-            success:false,
-         })
+      if (!user) {
+         return res.status(401).json({
+            message: "Unauthorized access",
+            success: false
+         });
       }
+
+      let query = { userId: user.id };
+
+      if (type) {
+         query["response.responseOf"] = type; // Correct way to query nested fields
+      }
+
+      const AllAIChat = await AITooLModel.find(query);
+
+      if (AllAIChat.length <= 0) {
+         return res.status(404).json({
+            message: "No Data found",
+            success: false,
+         });
+      }
+
       res.status(200).json({
-         message:"All the chat retrived..",
-         success:true,
-         data:AllAIChat
-      })
-   }catch(error){
+         message: type ? `${type} data was retrieved successfully` : "All the chat retrieved.",
+         success: true,
+         data: AllAIChat
+      });
+
+   } catch (error) {
       return res.status(500).json({
-         message:"Internal Server Error",
-         success:true
+         message: "Internal Server Error",
+         success: false
       });
    }
-}
+};
+
 const createNewChat = async(req,res) => {
    try{
       const {text,type} = req.body;
@@ -34,6 +93,11 @@ const createNewChat = async(req,res) => {
       if(type === "prompt"){
          responseData = await optimizePrompt(text);
          // responseData = {...responseData,}
+      }else if(type === "code-generate"){
+         responseData = await generateCode(text);
+      }
+      else if(type === "code-explain"){
+         responseData = await explainAndOptimize(text);
       }
       if(!responseData){
          return res.status(400).json({
