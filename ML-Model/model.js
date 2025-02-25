@@ -139,7 +139,7 @@ async function explainAndOptimize(userCode) {
         }
         
         const response = await axios.post(
-            `${GEMINI_API_URL}?key=${API_KEY}`,
+            `${GEMINI_API_URL}?key=${GEMINI_API_KEY}`,
             {
                 contents: [{ parts: [{ text: `Analyze the following program. If it contains errors, correct them. Then, optimize the code for efficiency and best practices. Finally, explain each step in a README format.
    -But Don't mention README word.
