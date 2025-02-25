@@ -1,5 +1,5 @@
 const express = require("express");
-const { getALLChatOfUser, createNewChat, deleteChat } = require("../controller/AIToolController");
+const { getALLChatOfUser, createNewChat, deleteChat } = require("../ML-Model/moreAitoolController");
 const { verifyUser } = require("../controller/authVerify");
 const router = express.Router();
 

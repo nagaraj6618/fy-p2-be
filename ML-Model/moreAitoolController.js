@@ -1,6 +1,7 @@
-const { optimizePrompt, generateCode, explainAndOptimize } = require("../ML-Model/model");
-const AITooLModel = require("../model/aiToolModel");
-const { verifyToken } = require("./authVerify");
+const { optimizePrompt, generateCode, explainAndOptimize } = require("./model");
+// const AITooLModel = require("../model/aiToolModel");
+const AITooLModel = require("./AIToolModel");
+const { verifyToken } = require("../controller/authVerify");
 
 // const getALLChatOfUser = async(req,res) => {
 //    try{
