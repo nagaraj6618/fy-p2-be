@@ -175,4 +175,39 @@ ${ userCode }
     }
 }
 
-module.exports = {checkGrammar,extractJson,optimizePrompt,generateCode,explainAndOptimize};
+async function getGrammarLesson(title) {
+
+    try {
+        const response = await axios.post(
+            `${GEMINI_API_URL}?key=${GEMINI_API_KEY}`,
+            {
+                contents: [{ parts: [{ 
+                text: `Provide a JSON response about ${title}, including:
+                - title: The given title,
+                - notes: Explanation or definition,
+                - examples: [At least 10 examples with highlighted words using <strong class='text-blue-500'></strong>,
+                sentence & explaination
+                ],
+                - quiz: At least 2 questions with options and answers.`    
+            }] }]
+            },
+            {
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            }
+        );
+        const generatedCode = response.data.candidates[0].content.parts[0].text;
+        // console.log(generatedCode)
+        return extractJson(generatedCode);
+    } catch (error) {
+        console.error("Error fetching data from Gemini 1.5 API:", error);
+        return null;
+    }
+}
+
+// Example usage
+// getGrammarLesson("Articles").then(data => console.log(extractJson(data)));
+
+
+module.exports = {checkGrammar,extractJson,optimizePrompt,generateCode,explainAndOptimize,getGrammarLesson};

@@ -1,7 +1,8 @@
-const { optimizePrompt, generateCode, explainAndOptimize } = require("./model");
+const { optimizePrompt, generateCode, explainAndOptimize, getGrammarLesson } = require("./model");
 // const AITooLModel = require("../model/aiToolModel");
 const AITooLModel = require("./AIToolModel");
 const { verifyToken } = require("../controller/authVerify");
+const LearnModel = require("./GrammarLearnModel");
 
 // const getALLChatOfUser = async(req,res) => {
 //    try{
@@ -159,5 +160,82 @@ const deleteChat = async(req,res) => {
       });
    }
 }
+const createGrammerLearning = async(req,res) => {
+   try{
+      const {text,type} = req.body;
+      const user = await verifyToken(req.headers.authorization);
+      let responseData = null;
+      responseData = await getGrammarLesson(text); 
 
-module.exports  = {getALLChatOfUser,createNewChat,deleteChat};
+      if(!responseData){
+         return res.status(400).json({
+            message:"An Error Occured",
+            success:false
+         })
+      }
+      const aiNewChat = new LearnModel({
+         request:text,
+         response:responseData,
+         userId:user.id
+      });
+      await aiNewChat.save();
+      console.log(aiNewChat);
+      return res.status(200).json({
+         message:"Response sent for your query",
+         success:true,
+         data:aiNewChat
+
+      })
+   }catch(error){
+      return res.status(500).json({
+         message:"Internal Server Error",
+         success:false,
+         error
+      });
+   }
+}
+
+const getAllGrammarLearnData = async(req,res) => {
+   try {
+      console.log(req.query);
+      const { type } = req.query;
+
+      // Ensure the user is authenticated before querying
+      const user = verifyToken(req.headers.authorization);
+      if (!user) {
+         return res.status(401).json({
+            message: "Unauthorized access",
+            success: false
+         });
+      }
+
+      let query = { userId: user.id };
+
+      if (type) {
+         query["response.responseOf"] = type; // Correct way to query nested fields
+      }
+
+      const AllAIChat = await LearnModel.find(query);
+
+      if (AllAIChat.length <= 0) {
+         return res.status(404).json({
+            message: "No Data found",
+            success: false,
+         });
+      }
+
+      res.status(200).json({
+         message: type ? `${type} data was retrieved successfully` : "All the chat retrieved.",
+         success: true,
+         data: AllAIChat
+      });
+
+   } catch (error) {
+      return res.status(500).json({
+         message: "Internal Server Error",
+         success: false
+      });
+   }
+}
+
+module.exports  = {getALLChatOfUser,createNewChat,deleteChat,createGrammerLearning,getAllGrammarLearnData};
